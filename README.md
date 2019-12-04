@@ -1,1 +1,3 @@
 # pdfsigner
+
+ `java -version`
