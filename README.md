@@ -17,3 +17,5 @@ make
 #### Desta forma roda em Linux ou Mac Os X
 
 `./sign.sh certificado.pfx SENHA arquivo.pdf arquivo_assinado.pdf`
+
+#### Após executar o comando acima verifique se foi criado o arquivo_assinado.pdf no diretório.
