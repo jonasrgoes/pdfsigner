@@ -4,7 +4,11 @@
 
  `java -version`
  
-### Se precisar compilar o Java execute:
+### Faça o download dos arquivos
+
+`git clone https://github.com/jonasrgoes/pdfsigner.git`
+ 
+### Se precisar compilar o script em Java execute:
 
 ```
 rm sign.class
