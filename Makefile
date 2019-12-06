@@ -6,4 +6,4 @@ sign.class: sign.java
 	javac sign.java
 
 test:
-	java sign cert-and-private_key.pfx Password input.pdf output.pdf "Bin der Autor" "Wien"
+	java sign certificado.pfx SENHA arquivo.pdf arquivo_assinado.pdf
