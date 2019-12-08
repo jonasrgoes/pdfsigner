@@ -120,7 +120,7 @@ function pdf_check {
 ###################
 
 # Exibir ajuda se não inserir argumentos
-[ "$#" == 0 ] && show_help
+[ "$#" != 2 ] && show_help
 
 # Lista de argumentos válidos
 while [[ $# -gt 0 ]]; do
@@ -131,9 +131,11 @@ while [[ $# -gt 0 ]]; do
     ;;
     -s|--sign)
     pfx_check $2 #&& pdf_sign $2
+    exit $?
     ;;
     -p|--pdf)
     pdf_check $2
+    exit $?
     ;;
     *)
     echo "Opção inválida '$key'"
@@ -141,25 +143,5 @@ while [[ $# -gt 0 ]]; do
   esac
   shift 2
 done
-
-## PRIMEIRO ARGUMENTO: CERTIFICADO PFX
-#if [ -s "$1" ]
-#then
-#  # verificando se o certificado é válido
-#  pfx_check "$1" "$2"
-#  RETURN_CODE=$?
-#  if [ ${RETURN_CODE} -eq "1" ]
-#  then
-#    echo "Certificado OK"
-#    cd $(dirname "$1")
-#    echo "Diretorio atual: `pwd`"
-#  else
-#    echo -e "${RED}Erro: Certificado ou senha INVALIDOS${NC}"
-#    exit 1
-#  fi
-#else
-#  echo -e "${RED}Erro: O primeiro argumento deve ser um arquivo '.pfx' de certificado válido${NC}"
-#  exit 1
-#fi
 
 exit 0
