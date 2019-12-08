@@ -42,25 +42,42 @@ Como usar: ${0##*/} [-h] [-s PFX SENHA] [-x PFX SENHA] [-p PDF]
 Assine um PDF com um Certificado PFX. Verifique um certificado. Verifique um pdf assinado.
 
     -h | --help               exibe esta ajuda.
-    -x | --pfx    PFX SENHA   verifica um CERTIFICADO PFX.
-    -s | --sign   PFX SENHA   assina um arquivo PDF com o CERTIFICADO PFX.
-    -p | --pdf    PDF         verifica um PDF assinado.
+    -x | --pfx    PFX SENHA   verifica um arquivo CERTIFICADO PFX.
+    -s | --sign   PFX SENHA   assina um arquivo PDF com o CERTIFICADO PFX
+                              caso ainda não esteja assinado.
+    -p | --pdf    PDF         verifica a assinatura de um arquivo PDF.
 EOF
 }
 
 ## SIGN PDF
 function pdf_sign {
-  export CLASSPATH="${DIR_SCRIPT}/bcprov-jdk16-137.jar:${DIR_SCRIPT}/itext-2.0.4.jar:${DIR_SCRIPT}/sign.class:."
-  #echo "Usage: $0 <Certifiate.pkcs12> <Password> <Original.pdf> <Output.pdf>"
-  java sign ${@}
-  return 0
+  CERT="$1"
+  PASSWORD="$2"
+  PDF="$3"
+  IS_PDF=`file "${PDF}" | fgrep -c PDF\ document`
+  if [ ! -s "${PDF}" ] || [ ! "${PDF: -4}" == ".pdf" ] || [ $((${IS_PDF})) -eq 0 ]
+  then
+    echo "Erro: O arquivo deve ser um PDF"
+    return 0
+  fi
+  NOT_SIGNED=`pdfsig "${PDF}" | fgrep -c "does not contain any signatures"`
+  if [ $((${NOT_SIGNED})) -eq 0 ]
+  then
+    export CLASSPATH="${DIR_SCRIPT}/bcprov-jdk16-137.jar:${DIR_SCRIPT}/itext-2.0.4.jar:${DIR_SCRIPT}/sign.class:."
+    #echo "Usage: $0 <Certifiate.pkcs12> <Password> <Original.pdf> <Output.pdf>"
+    java sign ${@}
+    return 1
+  else
+    echo "Erro: Este arquivo PDF já está assinado"
+    return 0
+  fi
 }
 
 ## FUNÇÃO: VERIFICAR SE O CERTIFICADO É VÁLIDO
 ##
 ## pfx_check /PATH/TO/CERTIFICADO.PFX SENHA
 ##
-## retorna 1 se verdadeiro | 0 se falso
+## retorna 1 se certificado válido | 0 se certificado expirado
 ##
 function pfx_check {
   CERT="$1"
@@ -78,7 +95,7 @@ function pfx_check {
     echo "Certificado Ok"
     return 1
   else
-    echo "Erro: Certificado Inválido"
+    echo "Erro: Certificado inválido, expirado ou senha incorreta."
     return 0
   fi
 }
@@ -128,24 +145,30 @@ while [[ $# -gt 0 ]]; do
   case "$key" in
     -h|--help)
     show_help
+    shift
     ;;
     -s|--sign)
-    pfx_check $2 $3 #&& pdf_sign $2
+    [ "$#" != 4 ] && show_help && exit 0
+    pfx_check $2 $3 && pdf_sign $2 $3 $4
     exit $?
+    shift 4
     ;;
     -x|--pfx)
+    [ "$#" != 3 ] && show_help && exit 0
     pfx_check $2 $3
     exit $?
+    shift 3
     ;;
     -p|--pdf)
+    [ "$#" != 2 ] && show_help && exit 0
     pdf_check $2
     exit $?
+    shift 2
     ;;
     *)
     echo "Opção inválida '$key'"
     ;;
   esac
-  shift 2
 done
 
 exit 0
