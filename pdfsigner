@@ -46,7 +46,6 @@ Assine um PDF com um Certificado PFX. Verifique um certificado. Verifique um pdf
     -s | --sign   PFX SENHA   assina um arquivo PDF com o CERTIFICADO PFX.
     -p | --pdf    PDF         verifica um PDF assinado.
 EOF
-exit 1
 }
 
 ## SIGN PDF
