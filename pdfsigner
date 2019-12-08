@@ -34,7 +34,7 @@ fi
 ## FUNÇÕES
 ###################
 
-show_help() {
+help() {
 cat << EOF
 Como usar: ${0##*/} [-h] ou [-s PFX SENHA] ou [-x PFX SENHA] ou [-p PDF]
 Assine um PDF com um Certificado PFX. Verifique um certificado. Verifique um pdf assinado.
@@ -137,7 +137,7 @@ function pdf_check {
 # Exibir ajuda se não inserir argumentos
 if [ "$#" == 0 ] || [ "${1::1}" != "-" ]
 then
-  show_help
+  help
   exit 0
 fi
 
@@ -146,23 +146,23 @@ while [[ $# -gt 0 ]]; do
   key="$1"
   case "$key" in
     -h|--help)
-    show_help
+    help
     shift
     ;;
     -s|--sign)
-    [ "$#" != 4 ] && show_help && exit 0
+    [ "$#" != 4 ] && help && exit 0
     pfx_check $2 $3 && pdf_sign $2 $3 $4
     exit $?
     shift 4
     ;;
     -x|--pfx)
-    [ "$#" != 3 ] && show_help && exit 0
+    [ "$#" != 3 ] && help && exit 0
     pfx_check $2 $3
     exit $?
     shift 3
     ;;
     -p|--pdf)
-    [ "$#" != 2 ] && show_help && exit 0
+    [ "$#" != 2 ] && help && exit 0
     pdf_check $2
     exit $?
     shift 2
