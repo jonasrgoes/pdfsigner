@@ -10,6 +10,10 @@ readonly DIR_SCRIPT=$(dirname "$0")
 readonly FILE_LOCALIZADOR="localizador.json"
 readonly CMD_DATE="date +%y%m%d%H%M%S"
 
+#######################
+## DEPENDÊNCIAS
+###################
+
 ## JAVA
 if ! [ -x "$(command -v java)" ]; then
   echo "Comando 'java' nao instalado!"
@@ -29,9 +33,9 @@ if ! [ -x "$(command -v pdfsig)" ]; then
 fi
 
 #######################
-## ARGUMENTOS
+## FUNÇÕES
 ###################
-# Usage info
+
 show_help() {
 cat << EOF
 Usage: ${0##*/} [-hv] [-f OUTFILE] [FILE]...
@@ -48,10 +52,6 @@ exit 1
 
 [ "$#" == 0 ] && show_help
 
-#######################
-## FUNÇÕES
-###################
-
 ## SIGN PDF
 function sign {
   return 0
@@ -59,13 +59,18 @@ function sign {
 
 ## FUNÇÃO: VERIFICAR SE O CERTIFICADO É VÁLIDO
 ##
-## check_certificate /PATH/TO/CERTIFICADO.PFX SENHA
+## pfx_check /PATH/TO/CERTIFICADO.PFX SENHA
 ##
 ## retorna 1 se verdadeiro | 0 se falso
 ##
-function check_certificate {
+function pfx_check {
   CERT="$1"
   PASSWORD="$2"
+  if [ ! ${CERT: -4} == ".pfx" ]
+  then
+    echo "O certificado deve ser .pfx"
+    return 0
+  fi
   expiration_date=`openssl pkcs12 -in "${CERT}" -nokeys -passin pass:"${PASSWORD}" 2>/dev/null | openssl x509 -noout -enddate | cut -d= -f2`
   expiration_date_ts=`date -d "${expiration_date}" +%s`
   current_ts=`date +%s`
@@ -79,11 +84,11 @@ function check_certificate {
 
 ## FUNÇÃO: VERIFICAR SE O CERTIFICADO ESTÁ EXPIRADO
 ##
-## check_certificate_date /PATH/TO/CERTIFICADO.PFX
+## pfx_check_date /PATH/TO/CERTIFICADO.PFX
 ##
 ## retorna 1 se verdadeiro | 0 se falso
 ##
-function check_pdf {
+function pdf_check {
   PDF="$1"
   #pdfsig "${PDF}" | fgrep -c "Certificate has Expired"
   pdfsig "${PDF}" 
@@ -99,8 +104,11 @@ while [[ $# -gt 0 ]]; do
     -h|--help)
     show_help
     ;;
+    -s|--sign)
+    pfx_check $2 #&& pdf_sign $2
+    ;;
     -p|--pdf)
-    check_pdf $2
+    pdf_check $2
     ;;
     *)
     echo "Opção inválida '$key'"
@@ -114,7 +122,7 @@ done
 #if [ -s "$1" ]
 #then
 #  # verificando se o certificado é válido
-#  check_certificate "$1" "$2"
+#  pfx_check "$1" "$2"
 #  RETURN_CODE=$?
 #  if [ ${RETURN_CODE} -eq "1" ]
 #  then
