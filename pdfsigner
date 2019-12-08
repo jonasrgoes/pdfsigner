@@ -2,13 +2,11 @@
 
 umask 0002
 
-#LC_ALL=pt_BR.utf8 date
-
 readonly NC='\033[0m'
 readonly RED='\033[0;31m' 
 readonly DIR_SCRIPT=$(dirname "$0")
 readonly FILE_LOCALIZADOR="localizador.json"
-readonly CMD_DATE="date +%y%m%d%H%M%S"
+readonly CMD_DATE="LC_ALL=pt_BR.utf8 date +%y%m%d%H%M%S"
 
 #######################
 ## DEPENDÊNCIAS
@@ -17,19 +15,19 @@ readonly CMD_DATE="date +%y%m%d%H%M%S"
 ## JAVA
 if ! [ -x "$(command -v java)" ]; then
   echo "Comando 'java' nao instalado!"
-  exit 1
+  exit 2
 fi
 
 ## OPENSSL
 if ! [ -x "$(command -v openssl)" ]; then
   echo "Comando 'openssl' nao instalado!"
-  exit 1
+  exit 2
 fi
 
 ## PDFSIG
 if ! [ -x "$(command -v pdfsig)" ]; then
   echo "Comando 'pdfsig' nao instalado!"
-  exit 1
+  exit 2
 fi
 
 #######################
@@ -38,7 +36,7 @@ fi
 
 show_help() {
 cat << EOF
-Como usar: ${0##*/} [-h] [-s PFX SENHA] [-x PFX SENHA] [-p PDF]
+Como usar: ${0##*/} [-h] ou [-s PFX SENHA] ou [-x PFX SENHA] ou [-p PDF]
 Assine um PDF com um Certificado PFX. Verifique um certificado. Verifique um pdf assinado.
 
     -h | --help               exibe esta ajuda.
@@ -57,7 +55,7 @@ function pdf_sign {
   IS_PDF=`file "${PDF}" | fgrep -c PDF\ document`
   if [ ! -s "${PDF}" ] || [ ! "${PDF: -4}" == ".pdf" ] || [ $((${IS_PDF})) -eq 0 ]
   then
-    echo "Erro: O arquivo deve ser um PDF"
+    echo -e "Erro: ${RED}O arquivo deve ser um PDF${NC}"
     return 0
   fi
   NOT_SIGNED=`pdfsig "${PDF}" | fgrep -c "does not contain any signatures"`
@@ -68,7 +66,7 @@ function pdf_sign {
     java sign ${@}
     return 1
   else
-    echo "Erro: Este arquivo PDF já está assinado"
+    echo -e "Erro: ${RED}Este arquivo PDF já está assinado${NC}"
     return 0
   fi
 }
@@ -95,7 +93,7 @@ function pfx_check {
     echo "Certificado Ok"
     return 1
   else
-    echo "Erro: Certificado inválido, expirado ou senha incorreta."
+    echo -e "Erro: ${RED}Certificado inválido, expirado ou senha incorreta${NC}"
     return 0
   fi
 }
@@ -111,20 +109,20 @@ function pdf_check {
   IS_PDF=`file "${PDF}" | fgrep -c PDF\ document`
   if [ ! -s "${PDF}" ] || [ ! "${PDF: -4}" == ".pdf" ] || [ $((${IS_PDF})) -eq 0 ]
   then
-    echo "Erro: O arquivo deve ser um PDF"
+    echo -e "Erro: ${RED}O arquivo deve ser um PDF${NC}"
     return 0
   fi
   NOT_SIGNED=`pdfsig "${PDF}" | fgrep -c "does not contain any signatures"`
   if [ $((${NOT_SIGNED})) -eq 1 ]
   then
-    echo "Erro: PDF não assinado"
+    echo -e "Erro: ${RED}PDF não assinado${NC}"
     return 0
   fi
   VALIDATION=`pdfsig "${PDF}" | grep "Certificate Validation" | cut -d: -f2- | awk '{$1=$1};1'`
   IS_EXPIRED=`echo ${VALIDATION} | fgrep -c "Certificate has Expired"`
   if [ $((${IS_EXPIRED})) -eq 1 ]
   then
-    echo "Erro: Certificado Expirado"
+    echo -e "Erro: ${RED}Certificado Expirado${NC}"
     return 0
   else
     echo "Assinatura OK"
