@@ -135,7 +135,11 @@ function pdf_check {
 ###################
 
 # Exibir ajuda se não inserir argumentos
-[ "$#" == 0 ] && show_help
+if [ "$#" == 0 ] || [ "${1::1}" != "-" ]
+then
+  show_help
+  exit 0
+fi
 
 # Lista de argumentos válidos
 while [[ $# -gt 0 ]]; do
