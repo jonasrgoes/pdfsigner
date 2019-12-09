@@ -27,7 +27,7 @@ OpenSSL 1.1.1b  26 Feb 2019
 
 ### Versão do `Ubuntu`
 
-O comando `pdfsig` não estava funcionando no `Ubuntu 18`, a versão estava muito desatualizada.
+##### O comando `pdfsig` não estava funcionando no `Ubuntu 18`, a versão estava muito desatualizada.
 
 ```
 root@4800dcdfe3fd:/usr/local/bin/pdfsigner# lsb_release -a
@@ -40,16 +40,17 @@ Codename:	disco
  
 ### Faça o download dos arquivos
 
-Caso já tenha feito o download dos arquivos e deseje apenas sincronizar aqui com o `gitbub` faça:
+##### Caso já tenha feito o download dos arquivos e deseje apenas sincronizar aqui com o `gitbub` faça:
 
 ```
 cd /usr/local/bin/pdfsigner
 git pull origin master
 ```
 
-Baixando pela 1ª vez:
+##### Baixando pela 1ª vez:
 O diretório de instalação será `/usr/local/bin/pdfsigner`
 Execute:
+
 ```
 cd /usr/local/bin
 git clone https://github.com/jonasrgoes/pdfsigner.git
@@ -68,7 +69,7 @@ make
 
 ### INSTALAR NO UBUNTU LINUX
 
-No arquivo `/home/usuário/.bashrc` de cada usuário insira a linha:
+##### No arquivo `/home/usuário/.bashrc` de cada usuário insira a linha:
 
 ```
 export PATH=/usr/local/bin/pdfsigner:$PATH
@@ -92,7 +93,7 @@ Assine um PDF com um Certificado PFX. Verifique um certificado. Verifique um pdf
 
 ### TESTES
 
-Lembrando que ao assinar um PDF irá gerar um arquivo `-signed.pdf` no mesmo diretório do PDF que foi assinado.
+##### Lembrando que ao assinar um PDF irá gerar um arquivo `-signed.pdf` no mesmo diretório do PDF que foi assinado.
 
 ```
 root@4800dcdfe3fd:~# pdfsigner -s /usr/local/bin/pdfsigner/hagas.pfx SENHA /usr/local/bin/pdfsigner/laudo.pdf 
