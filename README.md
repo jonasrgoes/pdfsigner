@@ -1,12 +1,28 @@
 # Assinatura de PDF's com Certificado Digital PFX
 
-### Verificar se o java está instalado
+### Verificar se o `java` está instalado
 
 ```
 java -version
 openjdk version "11.0.4" 2019-07-16
 OpenJDK Runtime Environment (build 11.0.4+11-post-Ubuntu-1ubuntu219.04)
 OpenJDK 64-Bit Server VM (build 11.0.4+11-post-Ubuntu-1ubuntu219.04, mixed mode, sharing)
+```
+
+### Verificar se o `pdfsig` está instalado
+
+```
+pdfsig -v
+pdfsig version 0.74.0
+Copyright 2005-2019 The Poppler Developers - http://poppler.freedesktop.org
+Copyright 1996-2011 Glyph & Cog, LLC
+```
+
+### Verificar se o `openssl` está instalado
+
+```
+openssl version
+OpenSSL 1.1.1b  26 Feb 2019
 ```
 
 ### Versão do Ubuntu
@@ -22,6 +38,14 @@ Codename:	disco
  
 ### Faça o download dos arquivos
 
+Caso já tenha feito o download dos arquivos e deseje apenas sincronizar aqui com o `gitbub` faça:
+
+```
+cd /usr/local/bin/pdfsigner
+git pull origin master
+```
+
+Baixando pela 1ª vez:
 O diretório de instalação será `/usr/local/bin/pdfsigner`
 Execute:
 ```
