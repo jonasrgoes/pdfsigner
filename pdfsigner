@@ -36,7 +36,7 @@ fi
 
 help() {
 cat << EOF
-Como usar: ${0##*/} [-h] ou [-s PFX SENHA] ou [-x PFX SENHA] ou [-p PDF]
+Como usar: ${0##*/} [-h] ou [-s PFX SENHA] ou [-x PFX SENHA PDF] ou [-p PDF]
 Assine um PDF com um Certificado PFX. Verifique um certificado. Verifique um pdf assinado.
 
     -h | --help                   exibe esta ajuda.
@@ -52,6 +52,7 @@ function pdf_sign {
   CERT="$1"
   PASSWORD="$2"
   PDF="$3"
+  PDF_SIGNED="${PDF%.*}-signed.pdf"
   IS_PDF=`file "${PDF}" | fgrep -c PDF\ document`
   if [ ! -s "${PDF}" ] || [ ! "${PDF: -4}" == ".pdf" ] || [ $((${IS_PDF})) -eq 0 ]
   then
@@ -65,14 +66,14 @@ function pdf_sign {
     pfx_result=$?
     if [ ${pfx_result} -eq 1 ]
     then
-      [ -s "${PDF%.*}-signed.pdf" ] && rm -f "${PDF%.*}-signed.pdf"
+      [ -s "${PDF_SIGNED}" ] && rm -f "${PDF_SIGNED}"
       cd ${DIR_SCRIPT}
       export CLASSPATH="bcprov-jdk16-137.jar:itext-2.0.4.jar:sign.class:."
       #echo "Usage: $0 <Certifiate.pkcs12> <Password> <Original.pdf> <Output.pdf>"
-      java sign "${CERT}" "${PASSWORD}" "${PDF}" "${PDF%.*}-signed.pdf" 2>/dev/null
+      java sign "${CERT}" "${PASSWORD}" "${PDF}" "${PDF_SIGNED}" 2>/dev/null
       if [ $? == 0 ]
       then
-        echo "PDF Assinado: ${PDF%.*}-signed.pdf"
+        echo "PDF Assinado: ${PDF_SIGNED}"
         return 1
       else
         echo -e "Erro: ${RED}Falha ao assinar o PDF${NC}"
