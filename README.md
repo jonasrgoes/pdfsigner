@@ -75,6 +75,14 @@ make
 export PATH=/usr/local/bin/pdfsigner:$PATH
 ```
 
+##### No arquivo `/etc/skel/.bashrc` insira a linha no final:
+
+```
+if [ -d "/usr/local/bin/pdfsigner" ] ; then
+    PATH=/usr/local/bin/pdfsigner:$PATH
+fi
+```
+
 E assim sendo terá o comando `pdfsigner` disponível na linha de comando.
 
 ### Assinar um PDF
