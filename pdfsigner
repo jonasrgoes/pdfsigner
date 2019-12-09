@@ -54,6 +54,8 @@ function pdf_sign {
   PDF="$3"
   PDF_SIGNED="${PDF%.*}-signed.pdf"
   IS_PDF=`file "${PDF}" | fgrep -c PDF\ document`
+  echo ${PDF}
+  echo $IS_PDF
   if [ ! -s "${PDF}" ] || [ ! "${PDF: -4}" == ".pdf" ] || [ $((${IS_PDF})) -eq 0 ]
   then
     echo -e "Erro: ${RED}O arquivo deve ser um PDF${NC}"
@@ -170,19 +172,19 @@ while [[ $# -gt 0 ]]; do
     ;;
     -s|--sign)
     [ "$#" != 4 ] && help && exit 0
-    pdf_sign $2 $3 $4
+    pdf_sign "$2" "$3" "$4"
     exit $?
     shift 4
     ;;
     -x|--pfx)
     [ "$#" != 3 ] && help && exit 0
-    pfx_check $2 $3
+    pfx_check "$2" "$3"
     exit $?
     shift 3
     ;;
     -p|--pdf)
     [ "$#" != 2 ] && help && exit 0
-    pdf_check $2
+    pdf_check "$2"
     exit $?
     shift 2
     ;;
