@@ -22,10 +22,13 @@ Codename:	disco
  
 ### Faça o download dos arquivos
 
+O diretório de instalação será `/usr/local/bin/pdfsigner`
+Execute:
 ```
 cd /usr/local/bin
 git clone https://github.com/jonasrgoes/pdfsigner.git
 cd pdfsigner
+chmod +x pdfsigner
 ```
  
 ### Se precisar compilar o script em Java execute:
