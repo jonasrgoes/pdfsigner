@@ -4,6 +4,7 @@ umask 0002
 
 readonly NC='\033[0m'
 readonly RED='\033[0;31m' 
+readonly DIR_SCRIPT=$(dirname "$0")
 readonly FILE_LOCALIZADOR="localizador.json"
 readonly CMD_DATE="LC_ALL=pt_BR.utf8 date +%y%m%d%H%M%S"
 
@@ -57,10 +58,6 @@ function pdf_sign {
     echo -e "Erro: ${RED}O arquivo deve ser um PDF${NC}"
     return 0
   fi
-  DIR_PDF=$(dirname "${PDF}")
-  #echo "DIR PDF: ${DIR_PDF}"
-  #echo "PDF NAME: ${PDF%.*}"
-  #echo "PDF NAME: ${PDF##*/}"
   NOT_SIGNED=`pdfsig "${PDF}" | fgrep -c "does not contain any signatures"`
   if [ $((${NOT_SIGNED})) -eq 1 ]
   then
@@ -68,17 +65,22 @@ function pdf_sign {
     pfx_result=$?
     if [ ${pfx_result} -eq 1 ]
     then
-      export CLASSPATH="${DIR_PDF}/bcprov-jdk16-137.jar:${DIR_PDF}/itext-2.0.4.jar:${DIR_PDF}/sign.class:."
+      [ -s "${PDF%.*}-signed.pdf" ] && rm "${PDF%.*}-signed.pdf"
+      cd ${DIR_SCRIPT}
+      export CLASSPATH="bcprov-jdk16-137.jar:itext-2.0.4.jar:sign.class:."
       #echo "Usage: $0 <Certifiate.pkcs12> <Password> <Original.pdf> <Output.pdf>"
       java sign "${CERT}" "${PASSWORD}" "${PDF}" "${PDF%.*}-signed.pdf" 2>/dev/null
       if [ $? == 0 ]
       then
+        echo "PDF Assinado: ${PDF%.*}-signed.pdf"
         return 1
       else
+        echo -e "Erro: ${RED}Falha ao assinar o PDF${NC}"
         return 0
       fi
+      cd -
     else
-      echo "Erro: ${RED}PDF não assinado${NC}"
+      echo -e "Erro: ${RED}PDF não assinado${NC}"
       exit 0
     fi
   else
