@@ -25,7 +25,9 @@ openssl version
 OpenSSL 1.1.1b  26 Feb 2019
 ```
 
-### Versão do Ubuntu
+### Versão do `Ubuntu`
+
+O comando `pdfsig` não estava funcionando no `Ubuntu 18`, a versão estava muito desatualizada.
 
 ```
 root@4800dcdfe3fd:/usr/local/bin/pdfsigner# lsb_release -a
@@ -66,10 +68,13 @@ make
 
 ### INSTALAR NO UBUNTU LINUX
 
-No arquivo `.bashrc` de cada usuário insira a linha:
+No arquivo `/home/usuário/.bashrc` de cada usuário insira a linha:
+
 ```
 export PATH=/usr/local/bin/pdfsigner:$PATH
 ```
+
+E assim sendo terá o comando `pdfsigner` disponível na linha de comando.
 
 ### Assinar um PDF
 
