@@ -4,7 +4,6 @@ umask 0002
 
 readonly NC='\033[0m'
 readonly RED='\033[0;31m' 
-readonly DIR_SCRIPT=$(dirname "$0")
 readonly FILE_LOCALIZADOR="localizador.json"
 readonly CMD_DATE="LC_ALL=pt_BR.utf8 date +%y%m%d%H%M%S"
 
@@ -39,11 +38,11 @@ cat << EOF
 Como usar: ${0##*/} [-h] ou [-s PFX SENHA] ou [-x PFX SENHA] ou [-p PDF]
 Assine um PDF com um Certificado PFX. Verifique um certificado. Verifique um pdf assinado.
 
-    -h | --help               exibe esta ajuda.
-    -x | --pfx    PFX SENHA   verifica um arquivo CERTIFICADO PFX.
-    -s | --sign   PFX SENHA   assina um arquivo PDF com o CERTIFICADO PFX
-                              caso ainda não esteja assinado.
-    -p | --pdf    PDF         verifica a assinatura de um arquivo PDF.
+    -h | --help                   exibe esta ajuda.
+    -x | --pfx    PFX SENHA       verifica um arquivo CERTIFICADO PFX.
+    -s | --sign   PFX SENHA PDF   assina um arquivo PDF com o CERTIFICADO PFX
+                                  caso ainda não esteja assinado.
+    -p | --pdf    PDF             verifica a assinatura de um arquivo PDF.
 EOF
 }
 
@@ -58,13 +57,30 @@ function pdf_sign {
     echo -e "Erro: ${RED}O arquivo deve ser um PDF${NC}"
     return 0
   fi
+  DIR_PDF=$(dirname "${PDF}")
+  #echo "DIR PDF: ${DIR_PDF}"
+  #echo "PDF NAME: ${PDF%.*}"
+  #echo "PDF NAME: ${PDF##*/}"
   NOT_SIGNED=`pdfsig "${PDF}" | fgrep -c "does not contain any signatures"`
-  if [ $((${NOT_SIGNED})) -eq 0 ]
+  if [ $((${NOT_SIGNED})) -eq 1 ]
   then
-    export CLASSPATH="${DIR_SCRIPT}/bcprov-jdk16-137.jar:${DIR_SCRIPT}/itext-2.0.4.jar:${DIR_SCRIPT}/sign.class:."
-    #echo "Usage: $0 <Certifiate.pkcs12> <Password> <Original.pdf> <Output.pdf>"
-    java sign ${@}
-    return 1
+    pfx_check ${CERT} ${PASSWORD}
+    pfx_result=$?
+    if [ ${pfx_result} -eq 1 ]
+    then
+      export CLASSPATH="${DIR_PDF}/bcprov-jdk16-137.jar:${DIR_PDF}/itext-2.0.4.jar:${DIR_PDF}/sign.class:."
+      #echo "Usage: $0 <Certifiate.pkcs12> <Password> <Original.pdf> <Output.pdf>"
+      java sign "${CERT}" "${PASSWORD}" "${PDF}" "${PDF%.*}-signed.pdf" 2>/dev/null
+      if [ $? == 0 ]
+      then
+        return 1
+      else
+        return 0
+      fi
+    else
+      echo "Erro: ${RED}PDF não assinado${NC}"
+      exit 0
+    fi
   else
     echo -e "Erro: ${RED}Este arquivo PDF já está assinado${NC}"
     return 0
@@ -151,7 +167,7 @@ while [[ $# -gt 0 ]]; do
     ;;
     -s|--sign)
     [ "$#" != 4 ] && help && exit 0
-    pfx_check $2 $3 && pdf_sign $2 $3 $4
+    pdf_sign $2 $3 $4
     exit $?
     shift 4
     ;;
