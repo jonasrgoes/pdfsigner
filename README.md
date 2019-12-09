@@ -103,3 +103,7 @@ root@4800dcdfe3fd:~# pdfsigner -x /usr/local/bin/pdfsigner/certificado-bg-vencid
 Erro: Certificado inválido, expirado ou senha incorreta
 root@4800dcdfe3fd:~# 
 ```
+
+### SUPORTE
+
+`Whatsapp: (41) 99904-9150`
