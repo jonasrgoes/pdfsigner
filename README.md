@@ -63,6 +63,8 @@ Assine um PDF com um Certificado PFX. Verifique um certificado. Verifique um pdf
 
 ### TESTES
 
+Lembrando que ao assinar um PDF irá gerar um arquivo `-signed.pdf` no mesmo diretório do PDF que foi assinado.
+
 ```
 root@4800dcdfe3fd:~# pdfsigner -s /usr/local/bin/pdfsigner/hagas.pfx SENHA /usr/local/bin/pdfsigner/laudo.pdf 
 Certificado Ok
