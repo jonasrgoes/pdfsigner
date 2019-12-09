@@ -71,7 +71,7 @@ apt install build-essential
 make
 ```
 
-#### Instalar no `UBUNTU`
+#### Instalar no `Ubuntu`
 
 No arquivo `/home/usuário/.bashrc` de cada usuário insira a linha:
 
