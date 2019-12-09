@@ -60,3 +60,20 @@ Assine um PDF com um Certificado PFX. Verifique um certificado. Verifique um pdf
                                   caso ainda não esteja assinado.
     -p | --pdf    PDF             verifica a assinatura de um arquivo PDF.
 ```
+
+### TESTES
+
+```
+root@4800dcdfe3fd:~# pdfsigner -s /usr/local/bin/pdfsigner/hagas.pfx SENHA /usr/local/bin/pdfsigner/laudo.pdf 
+Certificado Ok
+Assinatura concluida.
+PDF Assinado: /usr/local/bin/pdfsigner/laudo-signed.pdf
+root@4800dcdfe3fd:~# pdfsigner -p /usr/local/bin/pdfsigner/laudo-signed.pdf
+Assinatura OK
+root@4800dcdfe3fd:~# pdfsigner -s /usr/local/bin/pdfsigner/certificado-bg-vencido-senha-linkBgstudios2018.pfx SENHA /usr/local/bin/pdfsigner/laudo.pdf 
+Erro: Certificado inválido, expirado ou senha incorreta
+Erro: PDF não assinado
+root@4800dcdfe3fd:~# pdfsigner -x /usr/local/bin/pdfsigner/certificado-bg-vencido-senha-linkBgstudios2018.pfx linkBgstudios2018
+Erro: Certificado inválido, expirado ou senha incorreta
+root@4800dcdfe3fd:~# 
+```
