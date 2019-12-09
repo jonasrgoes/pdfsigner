@@ -38,17 +38,21 @@ Release:	19.04
 Codename:	disco
 ```
  
-### Faça o download dos arquivos
+### INSTALAÇÃO: 
 
-##### Caso já tenha feito o download dos arquivos e deseje apenas sincronizar aqui com o `gitbub` faça:
+#### Faça o download dos arquivos
+
+Caso já tenha feito o download dos arquivos e deseje apenas sincronizar aqui com o `gitbub` faça:
 
 ```
 cd /usr/local/bin/pdfsigner
 git pull origin master
 ```
 
-##### Baixando pela 1ª vez:
+#### Baixando pela 1ª vez:
+
 O diretório de instalação será `/usr/local/bin/pdfsigner`
+
 Execute:
 
 ```
@@ -67,15 +71,15 @@ apt install build-essential
 make
 ```
 
-### INSTALAR NO UBUNTU LINUX
+#### INSTALAR NO `UBUNTU`
 
-##### No arquivo `/home/usuário/.bashrc` de cada usuário insira a linha:
+No arquivo `/home/usuário/.bashrc` de cada usuário insira a linha:
 
 ```
 export PATH=/usr/local/bin/pdfsigner:$PATH
 ```
 
-##### No arquivo `/etc/skel/.bashrc` insira a linha no final:
+No arquivo `/etc/skel/.bashrc` insira a linha no final:
 
 ```
 if [ -d "/usr/local/bin/pdfsigner" ] ; then
@@ -84,6 +88,10 @@ fi
 ```
 
 E assim sendo terá o comando `pdfsigner` disponível na linha de comando.
+
+### DOCKER
+
+Caso não deseje instalar passo a passo há um `docker` já pronto disponível rodando `Ubuntu 19` com todas as configurações e instalação já realizadas. Basta baixar o `container` no servidor e rodar.
 
 ### Assinar um PDF
 
