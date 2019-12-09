@@ -65,7 +65,7 @@ function pdf_sign {
     pfx_result=$?
     if [ ${pfx_result} -eq 1 ]
     then
-      [ -s "${PDF%.*}-signed.pdf" ] && rm "${PDF%.*}-signed.pdf"
+      [ -s "${PDF%.*}-signed.pdf" ] && rm -f "${PDF%.*}-signed.pdf"
       cd ${DIR_SCRIPT}
       export CLASSPATH="bcprov-jdk16-137.jar:itext-2.0.4.jar:sign.class:."
       #echo "Usage: $0 <Certifiate.pkcs12> <Password> <Original.pdf> <Output.pdf>"
