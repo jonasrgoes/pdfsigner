@@ -62,7 +62,7 @@ cd pdfsigner
 chmod +x pdfsigner
 ```
  
-### Se precisar compilar o script em Java execute:
+#### Se precisar compilar o script em Java execute:
 
 ```
 cd /usr/local/bin/pdfsigner
@@ -71,7 +71,7 @@ apt install build-essential
 make
 ```
 
-#### INSTALAR NO `UBUNTU`
+#### Instalar no `UBUNTU`
 
 No arquivo `/home/usuário/.bashrc` de cada usuário insira a linha:
 
