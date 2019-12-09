@@ -34,7 +34,9 @@ chmod +x pdfsigner
 ### Se precisar compilar o script em Java execute:
 
 ```
+cd /usr/local/bin/pdfsigner
 rm sign.class
+apt install build-essential
 make
 ```
 
