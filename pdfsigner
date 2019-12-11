@@ -7,6 +7,9 @@ readonly RED='\033[0;31m'
 readonly DIR_SCRIPT=$(dirname "$0")
 readonly FILE_LOCALIZADOR="localizador.json"
 readonly CMD_DATE="LC_ALL=pt_BR.utf8 date +%y%m%d%H%M%S"
+readonly OUTPUT_DIR=~/pdfsigner-output
+  
+[ ! -d "${OUTPUT_DIR}" ] && mkdir -pv "${OUTPUT_DIR}"
 
 #######################
 ## DEPENDÊNCIAS
@@ -36,14 +39,14 @@ fi
 
 help() {
 cat << EOF
-Como usar: ${0##*/} [-h] ou [-s PFX SENHA] ou [-x PFX SENHA PDF] ou [-p PDF]
+Como usar: ${0##*/} [-h] ou [-s PFX SENHA PDF] ou [-x PFX SENHA LOCALIZADOR] ou [-p PDF]
 Assine um PDF com um Certificado PFX. Verifique um certificado. Verifique um pdf assinado.
 
-    -h | --help                   exibe esta ajuda.
-    -x | --pfx    PFX SENHA       verifica um arquivo CERTIFICADO PFX.
-    -s | --sign   PFX SENHA PDF   assina um arquivo PDF com o CERTIFICADO PFX
-                                  caso ainda não esteja assinado.
-    -p | --pdf    PDF             verifica a assinatura de um arquivo PDF.
+    -h | --help                           exibe esta ajuda.
+    -x | --pfx    PFX SENHA LOCALIZADOR   verifica um certificado PFX.
+    -s | --sign   PFX SENHA PDF           assina um arquivo PDF com o CERTIFICADO PFX
+                                          caso ainda não esteja assinado.
+    -p | --pdf    PDF                     verifica a assinatura de um arquivo PDF.
 EOF
 }
 
@@ -62,7 +65,7 @@ function pdf_sign {
   NOT_SIGNED=`pdfsig "${PDF}" | fgrep -c "does not contain any signatures"`
   if [ $((${NOT_SIGNED})) -eq 1 ]
   then
-    pfx_check ${CERT} ${PASSWORD}
+    pfx_check "${CERT}" "${PASSWORD}"
     pfx_result=$?
     if [ ${pfx_result} -eq 1 ]
     then
@@ -99,9 +102,16 @@ function pdf_sign {
 function pfx_check {
   CERT="$1"
   PASSWORD="$2"
+  LOCALIZADOR="$3"
+  JSON="${OUTPUT_DIR}/${LOCALIZADOR}.json"
   if [ ! ${CERT: -4} == ".pfx" ]
   then
     echo "O certificado deve ser .pfx"
+    return 0
+  fi
+  if [ ${#LOCALIZADOR} -eq 0 ]
+  then
+    echo "O localizador não foi informado"
     return 0
   fi
   expiration_date=`openssl pkcs12 -in "${CERT}" -nokeys -passin pass:"${PASSWORD}" 2>/dev/null | openssl x509 -noout -enddate | cut -d= -f2`
@@ -110,11 +120,31 @@ function pfx_check {
   if [ $((${expiration_date_ts})) -gt $((${current_ts})) ]
   then
     echo "Certificado Ok"
+    pfx_owner "${CERT}" "${PASSWORD}"
+    echo -e "{ \n\tstatus: \"sucesso\", \n\tcertificadoDocumento: \"${doc}\", \n\tcertificadoNome: \"${nome}\", \n\terroMensagem: \"\" \n}" > ${JSON}
     return 1
   else
     echo -e "Erro: ${RED}Certificado inválido, expirado ou senha incorreta${NC}"
     return 0
   fi
+}
+
+function pfx_owner {
+  CERT="$1"
+  PASSWORD="$2"
+
+  if [ ! ${CERT: -4} == ".pfx" ]
+  then
+    echo "O certificado deve ser .pfx"
+    return 0
+  fi
+
+  friendlyName=`openssl pkcs12 -in "${CERT}" -passin pass:"${PASSWORD}" -clcerts -nokeys -out - | grep friendlyName | awk '{$1=$1};1'`
+
+  doc=`echo ${friendlyName} | cut -d: -f2 | egrep -o "[0-9]*"`
+  nome=`echo ${friendlyName} | cut -d: -f2 | awk '{$1=$1};1' | sed "s/${doc}//g"`
+
+  echo -e "${nome}\n${doc}"
 }
 
 ## FUNÇÃO: VERIFICAR SE O PDF ESTÁ ASSINADO
@@ -175,8 +205,8 @@ while [[ $# -gt 0 ]]; do
     shift 4
     ;;
     -x|--pfx)
-    [ "$#" != 3 ] && help && exit 0
-    pfx_check "$2" "$3"
+    [ "$#" != 4 ] && help && exit 0
+    pfx_check "$2" "$3" "$4"
     exit $?
     shift 3
     ;;
