@@ -5,7 +5,6 @@ umask 0002
 readonly NC='\033[0m'
 readonly RED='\033[0;31m' 
 readonly DIR_SCRIPT=$(dirname "$0")
-readonly FILE_LOCALIZADOR="localizador.json"
 readonly CMD_DATE="LC_ALL=pt_BR.utf8 date +%y%m%d%H%M%S"
 readonly OUTPUT_DIR=~/pdfsigner-output
   
@@ -39,14 +38,14 @@ fi
 
 help() {
 cat << EOF
-Como usar: ${0##*/} [-h] ou [-s PFX SENHA PDF] ou [-x PFX SENHA LOCALIZADOR] ou [-p PDF]
+Como usar: ${0##*/} [-h] ou [-s PFX SENHA PDF LOCALIZADOR] ou [-x PFX SENHA LOCALIZADOR] ou [-p PDF]
 Assine um PDF com um Certificado PFX. Verifique um certificado. Verifique um pdf assinado.
 
-    -h | --help                           exibe esta ajuda.
-    -x | --pfx    PFX SENHA LOCALIZADOR   verifica um certificado PFX.
-    -s | --sign   PFX SENHA PDF           assina um arquivo PDF com o CERTIFICADO PFX
-                                          caso ainda não esteja assinado.
-    -p | --pdf    PDF                     verifica a assinatura de um arquivo PDF.
+    -h | --help                             exibe esta ajuda.
+    -x | --pfx    PFX SENHA LOCALIZADOR     verifica um certificado PFX.
+    -s | --sign   PFX SENHA PDF LOCALIZADOR assina um arquivo PDF com o CERTIFICADO PFX
+                                            caso ainda não esteja assinado.
+    -p | --pdf    PDF                       verifica a assinatura de um arquivo PDF.
 EOF
 }
 
@@ -55,17 +54,23 @@ function pdf_sign {
   CERT="$1"
   PASSWORD="$2"
   PDF="$3"
-  PDF_SIGNED="${PDF%.*}-signed.pdf"
+  LOCALIZADOR="$4"
+  JSON="${OUTPUT_DIR}/${LOCALIZADOR}.json"
+  PDF_SIGNED="${OUTPUT_DIR}/${LOCALIZADOR}.pdf"
   IS_PDF=`file "${PDF}" | fgrep -c PDF\ document`
   if [ ! -s "${PDF}" ] || [ ! "${PDF: -4}" == ".pdf" ] || [ $((${IS_PDF})) -eq 0 ]
   then
     echo -e "Erro: ${RED}O arquivo deve ser um PDF${NC}"
     return 0
   fi
-  NOT_SIGNED=`pdfsig "${PDF}" | fgrep -c "does not contain any signatures"`
-  if [ $((${NOT_SIGNED})) -eq 1 ]
+  if [ ${#LOCALIZADOR} -eq 0 ]
   then
-    pfx_check "${CERT}" "${PASSWORD}"
+    echo "O localizador não foi informado"
+    return 0
+  fi
+  if [ ! -s "${PDF_SIGNED}" ]
+  then
+    pfx_check "${CERT}" "${PASSWORD}" "${LOCALIZADOR}"
     pfx_result=$?
     if [ ${pfx_result} -eq 1 ]
     then
@@ -77,6 +82,8 @@ function pdf_sign {
       if [ $? == 0 ]
       then
         echo "PDF Assinado: ${PDF_SIGNED}"
+        pfx_owner "${CERT}" "${PASSWORD}"
+        echo -e "{ \n\tstatus: \"sucesso\", \n\tpathArquivoAssinado: \"${PDF_SIGNED}\", \n\tdataHoraAssinatura: `eval ${CMD_DATE}`, \n\tcertificadoDocumento: \"${doc}\", \n\tcertificadoNome: \"${nome}\", \n\terroMensagem: \"\" \n}" > ${JSON}
         return 1
       else
         echo -e "Erro: ${RED}Falha ao assinar o PDF${NC}"
@@ -89,13 +96,15 @@ function pdf_sign {
     fi
   else
     echo -e "Erro: ${RED}Este arquivo PDF já está assinado${NC}"
+    pfx_owner "${CERT}" "${PASSWORD}"
+    echo -e "{ \n\tstatus: \"falha\", \n\tpathArquivoAssinado: \"${PDF_SIGNED}\", \n\tdataHoraAssinatura: `eval ${CMD_DATE}`, \n\tcertificadoDocumento: \"${doc}\", \n\tcertificadoNome: \"${nome}\", \n\terroMensagem: \"PDF já foi assinado\" \n}" > ${JSON}
     return 0
   fi
 }
 
 ## FUNÇÃO: VERIFICAR SE O CERTIFICADO É VÁLIDO
 ##
-## pfx_check /PATH/TO/CERTIFICADO.PFX SENHA
+## pfx_check /PATH/TO/CERTIFICADO.PFX SENHA LOCALIZADOR
 ##
 ## retorna 1 se certificado válido | 0 se certificado expirado
 ##
@@ -147,7 +156,7 @@ function pfx_owner {
   echo -e "${nome}\n${doc}"
 }
 
-## FUNÇÃO: VERIFICAR SE O PDF ESTÁ ASSINADO
+## FUNÇÃO: VE5IFICAR SE O PDF ESTÁ ASSINADO
 ##
 ## pdf_check /PATH/TO/ARQUIVO.PDF
 ##
@@ -199,8 +208,8 @@ while [[ $# -gt 0 ]]; do
     shift
     ;;
     -s|--sign)
-    [ "$#" != 4 ] && help && exit 0
-    pdf_sign "$2" "$3" "$4"
+    [ "$#" != 5 ] && help && exit 0
+    pdf_sign "$2" "$3" "$4" "$5"
     exit $?
     shift 4
     ;;
