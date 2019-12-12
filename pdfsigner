@@ -231,7 +231,7 @@ while [[ $# -gt 0 ]]; do
     ;;
     -s|--sign)
     [ "$#" != 5 ] && help && exit 0
-    pdf_sign "$2" "$3" "$4" "$5"
+    pdf_sign "$2" "$3" "$4" "$5" 2>/dev/null
     exit $?
     shift 5
     ;;
@@ -243,7 +243,7 @@ while [[ $# -gt 0 ]]; do
     ;;
     -p|--pdf)
     [ "$#" != 3 ] && help && exit 0
-    pdf_check "$2" "$3"
+    pdf_check "$2" "$3" 2>/dev/null
     exit $?
     shift 3
     ;;
