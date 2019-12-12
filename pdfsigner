@@ -120,6 +120,12 @@ function pfx_check {
     json "falha" "${CERT}" "" "" "" "O localizador não foi informado" "localizador_nao_informado"
     return 0
   fi
+	invalid_password=`openssl pkcs12 -in "${CERT}" -nokeys -passin pass:"${PASSWORD}" 2>&1 | fgrep -c invalid\ password`
+	if [ ${invalid_password} -gt 0 ]
+	then
+    json "falha" "${CERT}" "" "" "" "Senha incorreta" "${LOCALIZADOR}"
+		return 0
+	fi
   expiration_date=`openssl pkcs12 -in "${CERT}" -nokeys -passin pass:"${PASSWORD}" | openssl x509 -noout -enddate | cut -d= -f2`
   expiration_date_ts=`date -d "${expiration_date}" +%s`
   current_ts=`date +%s`
@@ -129,7 +135,7 @@ function pfx_check {
     json "sucesso" "${CERT}" "`date -d \"${expiration_date}\" ${FMT_DATE}`" "${nome}" "${doc}" "Certificado Ok" "${LOCALIZADOR}"
     return 1
   else
-    json "falha" "${CERT}" "`date -d \"${expiration_date}\" ${FMT_DATE}`" "${nome}" "${doc}" "Certificado inválido, expirado ou senha incorreta" "${LOCALIZADOR}"
+    json "falha" "${CERT}" "`date -d \"${expiration_date}\" ${FMT_DATE}`" "${nome}" "${doc}" "Certificado expirado" "${LOCALIZADOR}"
     return 0
   fi
 }
