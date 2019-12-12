@@ -5,7 +5,8 @@ umask 0002
 readonly NC='\033[0m'
 readonly RED='\033[0;31m' 
 readonly DIR_SCRIPT=$(dirname "$0")
-readonly CMD_DATE="LC_ALL=pt_BR.utf8 date +%y%m%d%H%M%S"
+readonly FMT_DATE="+%y%m%d%H%M%S"
+readonly CMD_DATE="LC_ALL=pt_BR.utf8 date ${FMT_DATE}"
 readonly OUTPUT_DIR=~/pdfsigner-output
   
 [ ! -d "${OUTPUT_DIR}" ] && mkdir -pv "${OUTPUT_DIR}"
@@ -61,12 +62,12 @@ function pdf_sign {
   pfx_owner "${CERT}" "${PASSWORD}"
   if [ ! -s "${PDF}" ] || [ ! "${PDF: -4}" == ".pdf" ] || [ $((${IS_PDF})) -eq 0 ]
   then
-    json "falha" "${PDF_SIGNED}" `eval ${CMD_DATE}` "${nome}" "${doc}" "O arquivo deve ser um PDF" "${LOCALIZADOR}"
+    json "falha" "${PDF_SIGNED}" "`eval ${CMD_DATE}`" "${nome}" "${doc}" "O arquivo deve ser um PDF" "${LOCALIZADOR}"
     return 0
   fi
   if [ ${#LOCALIZADOR} -eq 0 ]
   then
-    json "falha" "${PDF_SIGNED}" `eval ${CMD_DATE}` "${nome}" "${doc}" "O localizador não foi informado" "localizador_nao_informado"
+    json "falha" "${PDF_SIGNED}" "`eval ${CMD_DATE}`" "${nome}" "${doc}" "O localizador não foi informado" "localizador_nao_informado"
     return 0
   fi
   if [ ! -s "${PDF_SIGNED}" ]
@@ -81,19 +82,19 @@ function pdf_sign {
       java sign "${CERT}" "${PASSWORD}" "${PDF}" "${PDF_SIGNED}" 2>/dev/null
       if [ $? == 0 ]
       then
-        json "sucesso" "${PDF_SIGNED}" `eval ${CMD_DATE}` "${nome}" "${doc}" "PDF Assinado" "${LOCALIZADOR}"
+        json "sucesso" "${PDF_SIGNED}" "`eval ${CMD_DATE}`" "${nome}" "${doc}" "PDF Assinado" "${LOCALIZADOR}"
         return 1
       else
-        json "falha" "${PDF_SIGNED}" `eval ${CMD_DATE}` "${nome}" "${doc}" "JAVA -> Falha ao assinar o PDF" "${LOCALIZADOR}"
+        json "falha" "${PDF_SIGNED}" "`eval ${CMD_DATE}`" "${nome}" "${doc}" "JAVA -> Falha ao assinar o PDF" "${LOCALIZADOR}"
         return 0
       fi
       cd -
     else
-      json "falha" "${PDF_SIGNED}" `eval ${CMD_DATE}` "${nome}" "${doc}" "Certificado inválido, expirado ou senha incorreta" "${LOCALIZADOR}"
+      json "falha" "${PDF_SIGNED}" "`eval ${CMD_DATE}`" "${nome}" "${doc}" "Certificado inválido, expirado ou senha incorreta" "${LOCALIZADOR}"
       exit 0
     fi
   else
-    json "falha" "${PDF_SIGNED}" `eval ${CMD_DATE}` "${nome}" "${doc}" "PDF já foi assinado" "${LOCALIZADOR}"
+    json "falha" "${PDF_SIGNED}" "`eval ${CMD_DATE}`" "${nome}" "${doc}" "PDF já foi assinado" "${LOCALIZADOR}"
     return 0
   fi
 }
@@ -111,12 +112,12 @@ function pfx_check {
   JSON="${OUTPUT_DIR}/${LOCALIZADOR}.json"
   if [ ! ${CERT: -4} == ".pfx" ]
   then
-    echo "O certificado deve ser .pfx"
+    json "falha" "${CERT}" "" "" "" "O arquivo deve ser um PFX" "${LOCALIZADOR}"
     return 0
   fi
   if [ ${#LOCALIZADOR} -eq 0 ]
   then
-    echo "O localizador não foi informado"
+    json "falha" "${CERT}" "" "" "" "O localizador não foi informado" "localizador_nao_informado"
     return 0
   fi
   expiration_date=`openssl pkcs12 -in "${CERT}" -nokeys -passin pass:"${PASSWORD}" 2>/dev/null | openssl x509 -noout -enddate | cut -d= -f2`
@@ -124,12 +125,11 @@ function pfx_check {
   current_ts=`date +%s`
   if [ $((${expiration_date_ts})) -gt $((${current_ts})) ]
   then
-    echo "Certificado Ok"
     pfx_owner "${CERT}" "${PASSWORD}"
-    echo -e "{ \n\tstatus: \"sucesso\", \n\tcertificadoDocumento: \"${doc}\", \n\tcertificadoNome: \"${nome}\", \n\terroMensagem: \"\" \n}" > ${JSON}
+    json "sucesso" "${CERT}" "`date -d \"${expiration_date}\" ${FMT_DATE}`" "${nome}" "${doc}" "Certificado Ok" "${LOCALIZADOR}"
     return 1
   else
-    echo -e "Erro: ${RED}Certificado inválido, expirado ou senha incorreta${NC}"
+    json "falha" "${CERT}" "`date -d \"${expiration_date}\" ${FMT_DATE}`" "${nome}" "${doc}" "Certificado inválido, expirado ou senha incorreta" "${LOCALIZADOR}"
     return 0
   fi
 }
@@ -193,6 +193,7 @@ function json {
   
   JSON="${OUTPUT_DIR}/${localizador}.json"
 
+	# Obrigatorio uso exclusivo de TABS 
   tee "${JSON}" <<-EOF
 	{
 		status: "${status}",
