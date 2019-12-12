@@ -46,7 +46,7 @@ Assine um PDF com um Certificado PFX. Verifique um certificado. Verifique um pdf
     -x | --pfx    PFX SENHA LOCALIZADOR     verifica um certificado PFX.
     -s | --sign   PFX SENHA PDF LOCALIZADOR assina um arquivo PDF com o CERTIFICADO PFX
                                             caso ainda não esteja assinado.
-    -p | --pdf    PDF                       verifica a assinatura de um arquivo PDF.
+    -p | --pdf    PDF LOCALIZADOR           verifica a assinatura de um arquivo PDF.
 EOF
 }
 
@@ -120,12 +120,12 @@ function pfx_check {
     json "falha" "${CERT}" "" "" "" "O localizador não foi informado" "localizador_nao_informado"
     return 0
   fi
-  expiration_date=`openssl pkcs12 -in "${CERT}" -nokeys -passin pass:"${PASSWORD}" 2>/dev/null | openssl x509 -noout -enddate | cut -d= -f2`
+  expiration_date=`openssl pkcs12 -in "${CERT}" -nokeys -passin pass:"${PASSWORD}" | openssl x509 -noout -enddate | cut -d= -f2`
   expiration_date_ts=`date -d "${expiration_date}" +%s`
   current_ts=`date +%s`
+  pfx_owner "${CERT}" "${PASSWORD}"
   if [ $((${expiration_date_ts})) -gt $((${current_ts})) ]
   then
-    pfx_owner "${CERT}" "${PASSWORD}"
     json "sucesso" "${CERT}" "`date -d \"${expiration_date}\" ${FMT_DATE}`" "${nome}" "${doc}" "Certificado Ok" "${LOCALIZADOR}"
     return 1
   else
@@ -152,32 +152,36 @@ function pfx_owner {
 
 ## FUNÇÃO: VE5IFICAR SE O PDF ESTÁ ASSINADO
 ##
-## pdf_check /PATH/TO/ARQUIVO.PDF
+## pdf_check /PATH/TO/ARQUIVO.PDF LOCALIZADOR
 ##
 ## retorna 1 se assinatura válida | 0 se a assinatura expirada
 ##
 function pdf_check {
   PDF="$1"
+  LOCALIZADOR="$2"
   IS_PDF=`file "${PDF}" | fgrep -c PDF\ document`
   if [ ! -s "${PDF}" ] || [ ! "${PDF: -4}" == ".pdf" ] || [ $((${IS_PDF})) -eq 0 ]
   then
-    echo -e "Erro: ${RED}O arquivo deve ser um PDF${NC}"
+    json "falha" "${PDF}" "" "" "" "O arquivo deve ser um PDF" "${LOCALIZADOR}"
     return 0
   fi
   NOT_SIGNED=`pdfsig "${PDF}" | fgrep -c "does not contain any signatures"`
   if [ $((${NOT_SIGNED})) -eq 1 ]
   then
-    echo -e "Erro: ${RED}PDF não assinado${NC}"
+    json "falha" "${PDF}" "" "" "" "PDF não assinado" "${LOCALIZADOR}"
     return 0
   fi
   VALIDATION=`pdfsig "${PDF}" | grep "Certificate Validation" | cut -d: -f2- | awk '{$1=$1};1'`
+  nome=`pdfsig "${PDF}" | grep "Signer Certificate Common Name" | cut -d: -f2 | awk '{$1=$1};1'`
+  doc=`pdfsig "${PDF}" | grep "Signer Certificate Common Name" | cut -d: -f3 | awk '{$1=$1};1'`
+  DATA_ASSINATURA=`pdfsig "${PDF}" | grep "Signing Time" | cut -d: -f2- | awk '{$1=$1};1'`
   IS_EXPIRED=`echo ${VALIDATION} | fgrep -c "Certificate has Expired"`
   if [ $((${IS_EXPIRED})) -eq 1 ]
   then
-    echo -e "Erro: ${RED}Certificado Expirado${NC}"
+    json "falha" "${PDF}" "`date -d \"${DATA_ASSINATURA}\" ${FMT_DATE}`" "${nome}" "${doc}" "Assinatura Expirada" "${LOCALIZADOR}"
     return 0
   else
-    echo "Assinatura OK"
+    json "sucesso" "${PDF}" "`date -d \"${DATA_ASSINATURA}\" ${FMT_DATE}`" "${nome}" "${doc}" "Assinatura OK" "${LOCALIZADOR}"
     return 1
   fi
 }
@@ -229,19 +233,19 @@ while [[ $# -gt 0 ]]; do
     [ "$#" != 5 ] && help && exit 0
     pdf_sign "$2" "$3" "$4" "$5"
     exit $?
-    shift 4
+    shift 5
     ;;
     -x|--pfx)
     [ "$#" != 4 ] && help && exit 0
-    pfx_check "$2" "$3" "$4"
+    pfx_check "$2" "$3" "$4" 2>/dev/null
     exit $?
-    shift 3
+    shift 4
     ;;
     -p|--pdf)
-    [ "$#" != 2 ] && help && exit 0
-    pdf_check "$2"
+    [ "$#" != 3 ] && help && exit 0
+    pdf_check "$2" "$3"
     exit $?
-    shift 2
+    shift 3
     ;;
     *)
     echo "Opção inválida '$key'"
