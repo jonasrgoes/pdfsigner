@@ -58,14 +58,15 @@ function pdf_sign {
   JSON="${OUTPUT_DIR}/${LOCALIZADOR}.json"
   PDF_SIGNED="${OUTPUT_DIR}/${LOCALIZADOR}.pdf"
   IS_PDF=`file "${PDF}" | fgrep -c PDF\ document`
+  pfx_owner "${CERT}" "${PASSWORD}"
   if [ ! -s "${PDF}" ] || [ ! "${PDF: -4}" == ".pdf" ] || [ $((${IS_PDF})) -eq 0 ]
   then
-    echo -e "Erro: ${RED}O arquivo deve ser um PDF${NC}"
+    json "falha" "${PDF_SIGNED}" `eval ${CMD_DATE}` "${nome}" "${doc}" "O arquivo deve ser um PDF" "${LOCALIZADOR}"
     return 0
   fi
   if [ ${#LOCALIZADOR} -eq 0 ]
   then
-    echo "O localizador não foi informado"
+    json "falha" "${PDF_SIGNED}" `eval ${CMD_DATE}` "${nome}" "${doc}" "O localizador não foi informado" "localizador_nao_informado"
     return 0
   fi
   if [ ! -s "${PDF_SIGNED}" ]
@@ -77,27 +78,22 @@ function pdf_sign {
       [ -s "${PDF_SIGNED}" ] && rm -f "${PDF_SIGNED}"
       cd ${DIR_SCRIPT}
       export CLASSPATH="bcprov-jdk16-137.jar:itext-2.0.4.jar:sign.class:."
-      #echo "Usage: $0 <Certifiate.pkcs12> <Password> <Original.pdf> <Output.pdf>"
       java sign "${CERT}" "${PASSWORD}" "${PDF}" "${PDF_SIGNED}" 2>/dev/null
       if [ $? == 0 ]
       then
-        echo "PDF Assinado: ${PDF_SIGNED}"
-        pfx_owner "${CERT}" "${PASSWORD}"
-        echo -e "{ \n\tstatus: \"sucesso\", \n\tpathArquivoAssinado: \"${PDF_SIGNED}\", \n\tdataHoraAssinatura: `eval ${CMD_DATE}`, \n\tcertificadoDocumento: \"${doc}\", \n\tcertificadoNome: \"${nome}\", \n\terroMensagem: \"\" \n}" > ${JSON}
+        json "sucesso" "${PDF_SIGNED}" `eval ${CMD_DATE}` "${nome}" "${doc}" "PDF Assinado" "${LOCALIZADOR}"
         return 1
       else
-        echo -e "Erro: ${RED}Falha ao assinar o PDF${NC}"
+        json "falha" "${PDF_SIGNED}" `eval ${CMD_DATE}` "${nome}" "${doc}" "JAVA -> Falha ao assinar o PDF" "${LOCALIZADOR}"
         return 0
       fi
       cd -
     else
-      echo -e "Erro: ${RED}PDF não assinado${NC}"
+      json "falha" "${PDF_SIGNED}" `eval ${CMD_DATE}` "${nome}" "${doc}" "Certificado inválido, expirado ou senha incorreta" "${LOCALIZADOR}"
       exit 0
     fi
   else
-    echo -e "Erro: ${RED}Este arquivo PDF já está assinado${NC}"
-    pfx_owner "${CERT}" "${PASSWORD}"
-    echo -e "{ \n\tstatus: \"falha\", \n\tpathArquivoAssinado: \"${PDF_SIGNED}\", \n\tdataHoraAssinatura: `eval ${CMD_DATE}`, \n\tcertificadoDocumento: \"${doc}\", \n\tcertificadoNome: \"${nome}\", \n\terroMensagem: \"PDF já foi assinado\" \n}" > ${JSON}
+    json "falha" "${PDF_SIGNED}" `eval ${CMD_DATE}` "${nome}" "${doc}" "PDF já foi assinado" "${LOCALIZADOR}"
     return 0
   fi
 }
@@ -152,8 +148,6 @@ function pfx_owner {
 
   doc=`echo ${friendlyName} | cut -d: -f2 | egrep -o "[0-9]*"`
   nome=`echo ${friendlyName} | cut -d: -f2 | awk '{$1=$1};1' | sed "s/${doc}//g"`
-
-  echo -e "${nome}\n${doc}"
 }
 
 ## FUNÇÃO: VE5IFICAR SE O PDF ESTÁ ASSINADO
@@ -186,6 +180,29 @@ function pdf_check {
     echo "Assinatura OK"
     return 1
   fi
+}
+
+function json {
+  status="$1"
+  pathArquivoAssinado="$2"
+  dataHoraAssinatura="$3"
+  certificadoNome="$4"
+  certificadoDocumento="$5"
+  erroMensagem="$6"
+  localizador="$7"
+  
+  JSON="${OUTPUT_DIR}/${localizador}.json"
+
+  tee "${JSON}" <<-EOF
+	{
+		status: "${status}",
+		pathArquivoAssinado: "${pathArquivoAssinado}",
+		dataHoraAssinatura: "${dataHoraAssinatura}",
+		certificadoDocumento: "${certificadoDocumento}",
+		certificadoNome: "${certificadoNome}",
+		erroMensagem: "${erroMensagem}"
+	}
+	EOF
 }
 
 #######################
