@@ -39,7 +39,7 @@ fi
 
 help() {
 cat << EOF
-Como usar: ${0##*/} [-h] ou [-s PFX SENHA PDF LOCALIZADOR] ou [-x PFX SENHA LOCALIZADOR] ou [-p PDF]
+Como usar: ${0##*/} [-h] ou [-s PFX SENHA PDF LOCALIZADOR] ou [-x PFX SENHA LOCALIZADOR] ou [-p PDF LOCALIZADOR]
 Assine um PDF com um Certificado PFX. Verifique um certificado. Verifique um pdf assinado.
 
     -h | --help                             exibe esta ajuda.
@@ -50,7 +50,14 @@ Assine um PDF com um Certificado PFX. Verifique um certificado. Verifique um pdf
 EOF
 }
 
-## SIGN PDF
+## FUNÇÃO: ASSINA UM ARQUIVO PDF COM CERTIFICADO PFX
+##
+## pdf_sign CERT PASSWORD PDF LOCALIZADOR
+##
+## retorna 
+##	1 se assinado
+##	0 se falhou
+##
 function pdf_sign {
   CERT="$1"
   PASSWORD="$2"
@@ -145,6 +152,12 @@ function pfx_check {
   fi
 }
 
+## FUNÇÃO: EXTRAIR O NOME E DOCUMENTO DO CERTIFICADO
+##
+## pdf_owner CERT PASSWORD
+##
+## GRAVA AS VARIÁVEIS nome E doc
+##
 function pfx_owner {
   CERT="$1"
   PASSWORD="$2"
@@ -155,13 +168,13 @@ function pfx_owner {
     return 0
   fi
 
-  friendlyName=`openssl pkcs12 -in "${CERT}" -passin pass:"${PASSWORD}" -clcerts -nokeys -out - | grep friendlyName | awk '{$1=$1};1'`
+  CN=`openssl pkcs12 -in "${CERT}" -passin pass:"${PASSWORD}" -clcerts -nokeys -out - | head -n 5 | grep 'CN =' | sed -n 1p`
 
-  doc=`echo ${friendlyName} | cut -d: -f2 | egrep -o "[0-9]*"`
-  nome=`echo ${friendlyName} | cut -d: -f2 | awk '{$1=$1};1' | sed "s/${doc}//g"`
+  nome=`echo ${CN} | sed -E -n 's/.*CN = ([[:print:]]*):([0-9]*)/\1/p'`
+  doc=`echo ${CN} | sed -E -n 's/.*CN = ([[:print:]]*):([0-9]*)/\2/p'`
 }
 
-## FUNÇÃO: VE5IFICAR SE O PDF ESTÁ ASSINADO
+## FUNÇÃO: VERIFICAR SE O PDF ESTÁ ASSINADO
 ##
 ## pdf_check /PATH/TO/ARQUIVO.PDF LOCALIZADOR
 ##
