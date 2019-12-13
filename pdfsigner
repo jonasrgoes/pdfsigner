@@ -62,19 +62,19 @@ function pdf_sign {
   pfx_owner "${CERT}" "${PASSWORD}"
   if [ ! -s "${PDF}" ] || [ ! "${PDF: -4}" == ".pdf" ] || [ $((${IS_PDF})) -eq 0 ]
   then
-    json "falha" "${PDF_SIGNED}" "`eval ${CMD_DATE}`" "${nome}" "${doc}" "O arquivo deve ser um PDF" "${LOCALIZADOR}"
+    json "falha" "" "`eval ${CMD_DATE}`" "${nome}" "${doc}" "O arquivo deve ser um PDF" "${LOCALIZADOR}"
     return 0
   fi
   if [ ${#LOCALIZADOR} -eq 0 ]
   then
-    json "falha" "${PDF_SIGNED}" "`eval ${CMD_DATE}`" "${nome}" "${doc}" "O localizador não foi informado" "localizador_nao_informado"
+    json "falha" "" "`eval ${CMD_DATE}`" "${nome}" "${doc}" "O localizador não foi informado" "localizador_nao_informado"
     return 0
   fi
   if [ ! -s "${PDF_SIGNED}" ]
   then
-    pfx_check "${CERT}" "${PASSWORD}" "${LOCALIZADOR}"
+    pfx_json=`pfx_check "${CERT}" "${PASSWORD}" "${LOCALIZADOR}"`
     pfx_result=$?
-    if [ ${pfx_result} -eq 1 ]
+    if [ ${pfx_result} -eq 0 ]
     then
       [ -s "${PDF_SIGNED}" ] && rm -f "${PDF_SIGNED}"
       cd ${DIR_SCRIPT}
@@ -85,12 +85,12 @@ function pdf_sign {
         json "sucesso" "${PDF_SIGNED}" "`eval ${CMD_DATE}`" "${nome}" "${doc}" "PDF Assinado" "${LOCALIZADOR}"
         return 1
       else
-        json "falha" "${PDF_SIGNED}" "`eval ${CMD_DATE}`" "${nome}" "${doc}" "JAVA -> Falha ao assinar o PDF" "${LOCALIZADOR}"
+        json "falha" "" "`eval ${CMD_DATE}`" "${nome}" "${doc}" "JAVA -> Falha ao assinar o PDF" "${LOCALIZADOR}"
         return 0
       fi
       cd -
     else
-      json "falha" "${PDF_SIGNED}" "`eval ${CMD_DATE}`" "${nome}" "${doc}" "Certificado inválido, expirado ou senha incorreta" "${LOCALIZADOR}"
+			echo -e ${pfx_json}
       exit 0
     fi
   else
@@ -103,7 +103,12 @@ function pdf_sign {
 ##
 ## pfx_check /PATH/TO/CERTIFICADO.PFX SENHA LOCALIZADOR
 ##
-## retorna 1 se certificado válido | 0 se certificado expirado
+## retorna 
+##	0 se certificado válido
+##	1 se certificado expirado
+##	2 se senha incorreta
+##	3 se localizador não informado
+##	4 se arquivo não for pfx
 ##
 function pfx_check {
   CERT="$1"
@@ -113,18 +118,18 @@ function pfx_check {
   if [ ! ${CERT: -4} == ".pfx" ]
   then
     json "falha" "${CERT}" "" "" "" "O arquivo deve ser um PFX" "${LOCALIZADOR}"
-    return 0
+    return 4
   fi
   if [ ${#LOCALIZADOR} -eq 0 ]
   then
     json "falha" "${CERT}" "" "" "" "O localizador não foi informado" "localizador_nao_informado"
-    return 0
+    return 3
   fi
 	invalid_password=`openssl pkcs12 -in "${CERT}" -nokeys -passin pass:"${PASSWORD}" 2>&1 | fgrep -c invalid\ password`
 	if [ ${invalid_password} -gt 0 ]
 	then
     json "falha" "${CERT}" "" "" "" "Senha incorreta" "${LOCALIZADOR}"
-		return 0
+		return 2
 	fi
   expiration_date=`openssl pkcs12 -in "${CERT}" -nokeys -passin pass:"${PASSWORD}" | openssl x509 -noout -enddate | cut -d= -f2`
   expiration_date_ts=`date -d "${expiration_date}" +%s`
@@ -133,10 +138,10 @@ function pfx_check {
   if [ $((${expiration_date_ts})) -gt $((${current_ts})) ]
   then
     json "sucesso" "${CERT}" "`date -d \"${expiration_date}\" ${FMT_DATE}`" "${nome}" "${doc}" "Certificado Ok" "${LOCALIZADOR}"
-    return 1
+    return 0
   else
     json "falha" "${CERT}" "`date -d \"${expiration_date}\" ${FMT_DATE}`" "${nome}" "${doc}" "Certificado expirado" "${LOCALIZADOR}"
-    return 0
+    return 1
   fi
 }
 
