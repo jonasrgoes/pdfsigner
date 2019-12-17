@@ -86,7 +86,7 @@ function pdf_sign {
       [ -s "${PDF_SIGNED}" ] && rm -f "${PDF_SIGNED}"
       cd ${DIR_SCRIPT}
       export CLASSPATH="bcprov-jdk16-137.jar:itext-2.0.4.jar:sign.class:."
-      java sign "${CERT}" "${PASSWORD}" "${PDF}" "${PDF_SIGNED}" 2>/dev/null
+      java sign "${CERT}" "${PASSWORD}" "${PDF}" "${PDF_SIGNED}" >/dev/null
       if [ $? == 0 ]
       then
         json "sucesso" "${PDF_SIGNED}" "`eval ${CMD_DATE}`" "${nome}" "${doc}" "PDF Assinado" "${LOCALIZADOR}"
@@ -184,7 +184,12 @@ function pdf_check {
   PDF="$1"
   LOCALIZADOR="$2"
   IS_PDF=`file "${PDF}" | fgrep -c PDF\ document`
-  if [ ! -s "${PDF}" ] || [ ! "${PDF: -4}" == ".pdf" ] || [ $((${IS_PDF})) -eq 0 ]
+  if [ ! -s "${PDF}" ]
+  then
+    json "falha" "${PDF}" "" "" "" "O arquivo não existe" "${LOCALIZADOR}"
+    return 0
+  fi
+  if [ ! "${PDF: -4}" == ".pdf" ] || [ $((${IS_PDF})) -eq 0 ]
   then
     json "falha" "${PDF}" "" "" "" "O arquivo deve ser um PDF" "${LOCALIZADOR}"
     return 0
