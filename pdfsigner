@@ -67,7 +67,12 @@ function pdf_sign {
   PDF_SIGNED="${OUTPUT_DIR}/${LOCALIZADOR}.pdf"
   IS_PDF=`file "${PDF}" | fgrep -c PDF\ document`
   pfx_owner "${CERT}" "${PASSWORD}"
-  if [ ! -s "${PDF}" ] || [ ! "${PDF: -4}" == ".pdf" ] || [ $((${IS_PDF})) -eq 0 ]
+  if [ ! -s "${PDF}" ]
+  then
+    json "falha" "" "`eval ${CMD_DATE}`" "${nome}" "${doc}" "O arquivo nao existe" "${LOCALIZADOR}"
+    return 0
+  fi
+  if [ ! "${PDF: -4}" == ".pdf" ] || [ $((${IS_PDF})) -eq 0 ]
   then
     json "falha" "" "`eval ${CMD_DATE}`" "${nome}" "${doc}" "O arquivo deve ser um PDF" "${LOCALIZADOR}"
     return 0
@@ -122,26 +127,39 @@ function pfx_check {
   PASSWORD="$2"
   LOCALIZADOR="$3"
   JSON="${OUTPUT_DIR}/${LOCALIZADOR}.json"
+
+  if [ ! -s "${CERT}" ]
+  then
+    json "falha" "" "`eval ${CMD_DATE}`" "${nome}" "${doc}" "O arquivo nao existe" "${LOCALIZADOR}"
+    return 0
+  fi
+
   if [ ! ${CERT: -4} == ".pfx" ]
   then
     json "falha" "${CERT}" "" "" "" "O arquivo deve ser um PFX" "${LOCALIZADOR}"
     return 4
   fi
+
   if [ ${#LOCALIZADOR} -eq 0 ]
   then
     json "falha" "${CERT}" "" "" "" "O localizador não foi informado" "localizador_nao_informado"
     return 3
   fi
+
 	invalid_password=`openssl pkcs12 -in "${CERT}" -nokeys -passin pass:"${PASSWORD}" 2>&1 | fgrep -c invalid\ password`
+
 	if [ ${invalid_password} -gt 0 ]
 	then
     json "falha" "${CERT}" "" "" "" "Senha incorreta" "${LOCALIZADOR}"
 		return 2
 	fi
+
   expiration_date=`openssl pkcs12 -in "${CERT}" -nokeys -passin pass:"${PASSWORD}" | openssl x509 -noout -enddate | cut -d= -f2`
   expiration_date_ts=`date -d "${expiration_date}" +%s`
   current_ts=`date +%s`
+
   pfx_owner "${CERT}" "${PASSWORD}"
+
   if [ $((${expiration_date_ts})) -gt $((${current_ts})) ]
   then
     json "sucesso" "${CERT}" "`date -d \"${expiration_date}\" ${FMT_DATE}`" "${nome}" "${doc}" "Certificado Ok" "${LOCALIZADOR}"
@@ -162,10 +180,16 @@ function pfx_owner {
   CERT="$1"
   PASSWORD="$2"
 
+  if [ ! -s "${CERT}" ]
+  then
+    json "falha" "" "`eval ${CMD_DATE}`" "${nome}" "${doc}" "O arquivo nao existe" "${LOCALIZADOR}"
+    exit 1
+  fi
+
   if [ ! ${CERT: -4} == ".pfx" ]
   then
     echo "O certificado deve ser .pfx"
-    return 0
+    exit 1
   fi
 
   CN=`openssl pkcs12 -in "${CERT}" -passin pass:"${PASSWORD}" -clcerts -nokeys -out - | head -n 5 | grep 'CN =' | sed -n 1p`
