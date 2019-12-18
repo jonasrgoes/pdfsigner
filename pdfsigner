@@ -213,27 +213,33 @@ function pdf_check {
   PDF="$1"
   LOCALIZADOR="$2"
   IS_PDF=`file "${PDF}" | fgrep -c PDF\ document`
+
   if [ ! -s "${PDF}" ]
   then
     json "falha" "${PDF}" "" "" "" "O arquivo não existe" "${LOCALIZADOR}"
     return 0
   fi
+
   if [ ! "${PDF: -4}" == ".pdf" ] || [ $((${IS_PDF})) -eq 0 ]
   then
     json "falha" "${PDF}" "" "" "" "O arquivo deve ser um PDF" "${LOCALIZADOR}"
     return 0
   fi
+
   NOT_SIGNED=`pdfsig "${PDF}" | fgrep -c "does not contain any signatures"`
+
   if [ $((${NOT_SIGNED})) -eq 1 ]
   then
     json "falha" "${PDF}" "" "" "" "PDF não assinado" "${LOCALIZADOR}"
     return 0
   fi
+
   VALIDATION=`pdfsig "${PDF}" | grep "Certificate Validation" | cut -d: -f2- | awk '{$1=$1};1'`
   nome=`pdfsig "${PDF}" | grep "Signer Certificate Common Name" | cut -d: -f2 | awk '{$1=$1};1'`
   doc=`pdfsig "${PDF}" | grep "Signer Certificate Common Name" | cut -d: -f3 | awk '{$1=$1};1'`
   DATA_ASSINATURA=`pdfsig "${PDF}" | grep "Signing Time" | cut -d: -f2- | awk '{$1=$1};1'`
   IS_EXPIRED=`echo ${VALIDATION} | fgrep -c "Certificate has Expired"`
+
   if [ $((${IS_EXPIRED})) -eq 1 ]
   then
     json "falha" "${PDF}" "`date -d \"${DATA_ASSINATURA}\" ${FMT_DATE}`" "${nome}" "${doc}" "Assinatura Expirada" "${LOCALIZADOR}"
