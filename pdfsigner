@@ -66,22 +66,27 @@ function pdf_sign {
   JSON="${OUTPUT_DIR}/${LOCALIZADOR}.json"
   PDF_SIGNED="${OUTPUT_DIR}/${LOCALIZADOR}.pdf"
   IS_PDF=`file "${PDF}" | fgrep -c PDF\ document`
+
   pfx_owner "${CERT}" "${PASSWORD}"
+
   if [ ! -s "${PDF}" ]
   then
     json "falha" "" "`eval ${CMD_DATE}`" "${nome}" "${doc}" "O arquivo nao existe" "${LOCALIZADOR}"
     return 0
   fi
+
   if [ ! "${PDF: -4}" == ".pdf" ] || [ $((${IS_PDF})) -eq 0 ]
   then
     json "falha" "" "`eval ${CMD_DATE}`" "${nome}" "${doc}" "O arquivo deve ser um PDF" "${LOCALIZADOR}"
     return 0
   fi
+
   if [ ${#LOCALIZADOR} -eq 0 ]
   then
     json "falha" "" "`eval ${CMD_DATE}`" "${nome}" "${doc}" "O localizador não foi informado" "localizador_nao_informado"
     return 0
   fi
+
   if [ ! -s "${PDF_SIGNED}" ]
   then
     pfx_json=`pfx_check "${CERT}" "${PASSWORD}" "${LOCALIZADOR}"`
